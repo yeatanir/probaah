@@ -1,0 +1,41 @@
+# ================================
+# FILE: requirements.txt  
+# ================================
+
+# Core dependencies (already there)
+click>=8.0
+rich>=13.0
+pyyaml>=6.0
+paramiko>=3.0
+
+# Scientific computing powerhouse
+numpy>=1.21
+pandas>=1.5
+matplotlib>=3.6
+seaborn>=0.12
+
+# Atomic simulations
+ase>=3.22.0
+ovito>=3.9.0
+
+# Presentation generation
+python-pptx>=0.6.21
+
+# Data analysis & ML
+scipy>=1.9.0
+scikit-learn>=1.1.0
+
+# Molecular analysis
+mdanalysis>=2.0.0
+nglview>=3.0.3
+
+# Plotting powertools
+plotly>=5.0.0
+ipywidgets>=8.0.0
+
+# File format support
+openpyxl>=3.0.10
+h5py>=3.7.0
+
+# Performance
+numba>=0.56.0
