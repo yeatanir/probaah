@@ -320,6 +320,12 @@ def render():
     """Visualization and rendering tools"""
     pass
 
+# AI-powered workflow automation
+@cli.group()
+def ai():
+    """🤖 AI-powered workflow automation"""
+    pass
+
 # Analysis commands
 @analyze.command("trajectory")
 @click.argument("trajectory_file")
@@ -547,6 +553,328 @@ def full_workflow(trajectory_file, title):
     console.print(f"\n🎉 [bold green]Workflow complete![/bold green]")
     console.print("📁 Check the analysis/ directory for results")
     console.print(f"📊 Open {output_file} for presentation")
+
+# AI Commands
+@ai.command("process")
+@click.argument("request")
+@click.option("--config", default=None, help="Path to AI configuration file")
+def ai_process(request, config):
+    """Process natural language request"""
+    try:
+        import sys
+        import os
+        # Add plugins directory to path (works from any directory)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        plugins_dir = os.path.join(os.path.dirname(script_dir), 'plugins')
+        if plugins_dir not in sys.path:
+            sys.path.insert(0, plugins_dir)
+        from ai.orchestrator import process_natural_language_cli
+        
+        console.print(f"🤖 [bold blue]AI Processing Request[/bold blue]")
+        console.print(f"📝 Request: {request}")
+        
+        results = process_natural_language_cli(request, config)
+        
+        if results['success']:
+            console.print("✅ [bold green]AI workflow completed successfully![/bold green]")
+        else:
+            console.print("❌ [bold red]AI workflow failed[/bold red]")
+            if 'error' in results:
+                console.print(f"Error: {results['error']}")
+                
+    except ImportError as e:
+        console.print(f"❌ [red]AI components not available: {e}[/red]")
+        console.print("💡 Make sure AI plugins are properly installed")
+    except Exception as e:
+        console.print(f"❌ [red]AI processing failed: {e}[/red]")
+
+@ai.command("substitute")
+@click.argument("input_structure")
+@click.option("--remove", required=True, help="Species to remove (e.g., O2)")
+@click.option("--add", required=True, help="Species to add (e.g., O)")
+@click.option("--count", default=100, help="Number of molecules to add")
+@click.option("--density", default=0.18, help="Target density")
+@click.option("--geometry", default="gas-box:23x23x23,final-box:24x140x80", help="Geometry specification")
+@click.option("--visual-validation/--no-visual-validation", default=True, help="Run visual validation")
+@click.option("--output", default=None, help="Output file path")
+def ai_substitute(input_structure, remove, add, count, density, geometry, visual_validation, output):
+    """AI-powered gas substitution using PACKMOL"""
+    try:
+        import sys
+        import os
+        # Add plugins directory to path (works from any directory)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        plugins_dir = os.path.join(os.path.dirname(script_dir), 'plugins')
+        if plugins_dir not in sys.path:
+            sys.path.insert(0, plugins_dir)
+        from ai.packmol_wrapper import packmol_substitute_cli
+        
+        console.print(f"🧪 [bold blue]AI Gas Substitution[/bold blue]")
+        console.print(f"📁 Input: {input_structure}")
+        console.print(f"🔄 Remove: {remove}, Add: {add} (count: {count})")
+        
+        results = packmol_substitute_cli(
+            input_structure=input_structure,
+            remove_species=remove,
+            add_species=add,
+            count=count,
+            density=density,
+            geometry=geometry,
+            visual_validation=visual_validation,
+            output_file=output
+        )
+        
+        if results['success']:
+            console.print("✅ [bold green]Gas substitution completed![/bold green]")
+            console.print(f"📁 Output: {results['output_structure']}")
+            if visual_validation and 'validation' in results:
+                if results['validation']['approved']:
+                    console.print("✅ Structure validation passed")
+                else:
+                    console.print("⚠️  Structure validation found issues")
+        else:
+            console.print("❌ [bold red]Gas substitution failed[/bold red]")
+            if 'error' in results:
+                console.print(f"Error: {results['error']}")
+                
+    except ImportError as e:
+        console.print(f"❌ [red]PACKMOL wrapper not available: {e}[/red]")
+        console.print("💡 Make sure PACKMOL is installed and AI plugins are available")
+    except Exception as e:
+        console.print(f"❌ [red]Gas substitution failed: {e}[/red]")
+
+@ai.command("validate")
+@click.argument("structure_file")
+@click.option("--interactive/--no-interactive", default=True, help="Interactive validation")
+@click.option("--save-images/--no-save-images", default=False, help="Save validation images")
+def ai_validate(structure_file, interactive, save_images):
+    """AI-powered structure validation using VIAMD"""
+    try:
+        import sys
+        import os
+        # Add plugins directory to path (works from any directory)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        plugins_dir = os.path.join(os.path.dirname(script_dir), 'plugins')
+        if plugins_dir not in sys.path:
+            sys.path.insert(0, plugins_dir)
+        from ai.visual_validation import validate_structure_cli
+        
+        console.print(f"🔍 [bold blue]AI Structure Validation[/bold blue]")
+        console.print(f"📁 Structure: {structure_file}")
+        
+        results = validate_structure_cli(
+            structure_file=structure_file,
+            interactive=interactive,
+            save_images=save_images
+        )
+        
+        validation_result = results['validation_result']
+        if validation_result['approved']:
+            console.print("✅ [bold green]Structure validation passed![/bold green]")
+        else:
+            console.print("⚠️  [bold yellow]Structure validation found issues[/bold yellow]")
+            if 'issues' in validation_result:
+                for issue in validation_result['issues']:
+                    console.print(f"   • {issue}")
+        
+        if save_images and results['saved_images']:
+            console.print(f"📸 Validation images saved: {len(results['saved_images'])} files")
+                
+    except ImportError as e:
+        console.print(f"❌ [red]VIAMD wrapper not available: {e}[/red]")
+        console.print("💡 Make sure VIAMD is installed and AI plugins are available")
+    except Exception as e:
+        console.print(f"❌ [red]Structure validation failed: {e}[/red]")
+
+@ai.command("chat")
+@click.option("--config", default=None, help="Path to AI configuration file")
+def ai_chat(config):
+    """Interactive AI chat mode"""
+    try:
+        import sys
+        import os
+        # Add plugins directory to path (works from any directory)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        plugins_dir = os.path.join(os.path.dirname(script_dir), 'plugins')
+        if plugins_dir not in sys.path:
+            sys.path.insert(0, plugins_dir)
+        from ai.orchestrator import ProbaahAIOrchestrator
+        
+        console.print("🤖 [bold blue]Probaah AI Chat Mode[/bold blue]")
+        console.print("💬 Type your requests in natural language")
+        console.print("📝 Examples:")
+        console.print("   • substitute O2 with 100 O radicals in membrane.bgf")
+        console.print("   • analyze trajectory simulation.xyz with bond analysis")
+        console.print("   • validate structure output.xyz")
+        console.print("   • create presentation from analysis results")
+        console.print("🚪 Type 'exit' or 'quit' to leave chat mode")
+        console.print()
+        
+        orchestrator = ProbaahAIOrchestrator(config)
+        
+        while True:
+            try:
+                request = input("🤖 Probaah AI> ").strip()
+                
+                if request.lower() in ['exit', 'quit', 'bye']:
+                    console.print("👋 Goodbye!")
+                    break
+                
+                if not request:
+                    continue
+                
+                console.print()
+                results = orchestrator.process_request(request)
+                console.print()
+                
+                if results['success']:
+                    console.print("✅ [bold green]Request completed![/bold green]")
+                else:
+                    console.print("❌ [bold red]Request failed[/bold red]")
+                    if 'error' in results:
+                        console.print(f"Error: {results['error']}")
+                
+                console.print()
+                
+            except KeyboardInterrupt:
+                console.print("\n👋 Goodbye!")
+                break
+            except Exception as e:
+                console.print(f"❌ [red]Chat error: {e}[/red]")
+                
+    except ImportError as e:
+        console.print(f"❌ [red]AI chat not available: {e}[/red]")
+        console.print("💡 Make sure AI plugins are properly installed")
+    except Exception as e:
+        console.print(f"❌ [red]Chat initialization failed: {e}[/red]")
+
+@ai.command("status")
+def ai_status():
+    """Show AI tools status"""
+    try:
+        import sys
+        import os
+        # Add plugins directory to path (works from any directory)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        plugins_dir = os.path.join(os.path.dirname(script_dir), 'plugins')
+        if plugins_dir not in sys.path:
+            sys.path.insert(0, plugins_dir)
+        from ai.orchestrator import ProbaahAIOrchestrator
+        
+        console.print("🔧 [bold blue]AI Tools Status[/bold blue]")
+        
+        orchestrator = ProbaahAIOrchestrator()
+        status = orchestrator.get_tool_status()
+        
+        table = Table(title="AI Tool Availability")
+        table.add_column("Tool", style="cyan")
+        table.add_column("Status", style="green")
+        table.add_column("Type", style="yellow")
+        
+        for tool_name, tool_info in status.items():
+            status_icon = "✅" if tool_info['available'] else "❌"
+            table.add_row(
+                tool_name,
+                status_icon,
+                tool_info['type']
+            )
+        
+        console.print(table)
+        
+        # Show recommendations
+        missing_tools = [name for name, info in status.items() if not info['available']]
+        if missing_tools:
+            console.print("\n💡 [bold yellow]Missing Tools:[/bold yellow]")
+            console.print("   • Install PACKMOL: conda install -c conda-forge packmol")
+            console.print("   • Install VIAMD: Download from official website")
+            console.print("   • Install ASE: pip install ase")
+            console.print("   • Install python-pptx: pip install python-pptx")
+        else:
+            console.print("\n✅ [bold green]All AI tools are available![/bold green]")
+            
+    except ImportError as e:
+        console.print(f"❌ [red]AI status not available: {e}[/red]")
+    except Exception as e:
+        console.print(f"❌ [red]Status check failed: {e}[/red]")
+
+# Enhanced existing commands with AI
+@analyze.command("ai-insights")
+@click.argument("trajectory_file")
+@click.option("--model", default="gpt-4o", help="AI model to use")
+@click.option("--generate-report/--no-generate-report", default=True, help="Generate AI insights report")
+def analyze_ai_insights(trajectory_file, model, generate_report):
+    """Enhanced trajectory analysis with AI insights"""
+    try:
+        import sys
+        import os
+        # Add plugins directory to path (works from any directory)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        plugins_dir = os.path.join(os.path.dirname(script_dir), 'plugins')
+        if plugins_dir not in sys.path:
+            sys.path.insert(0, plugins_dir)
+        from ai.workflows.ai_enhanced_analysis import ai_enhanced_trajectory_analysis
+        
+        console.print(f"🔬🤖 [bold blue]AI-Enhanced Trajectory Analysis[/bold blue]")
+        console.print(f"📁 Input: {trajectory_file}")
+        console.print(f"🧠 AI Model: {model}")
+        
+        # Run AI-enhanced analysis
+        results = ai_enhanced_trajectory_analysis(trajectory_file, ai_model=model)
+        
+        console.print("✅ [bold green]AI-enhanced analysis complete![/bold green]")
+        
+        # Show summary
+        if 'ai_insights' in results:
+            console.print("\n🧠 [bold]AI Insights:[/bold]")
+            insights = results['ai_insights']
+            if 'key_findings' in insights:
+                for finding in insights['key_findings']:
+                    console.print(f"   • {finding}")
+            
+            if 'recommendations' in insights:
+                console.print("\n💡 [bold]AI Recommendations:[/bold]")
+                for rec in insights['recommendations']:
+                    console.print(f"   • {rec}")
+                
+    except ImportError as e:
+        console.print(f"❌ [red]AI-enhanced analysis not available: {e}[/red]")
+        console.print("💡 Make sure AI plugins and analysis tools are installed")
+    except Exception as e:
+        console.print(f"❌ [red]AI-enhanced analysis failed: {e}[/red]")
+
+@presentation.command("ai-enhance")
+@click.argument("presentation_file")
+@click.option("--add-insights/--no-add-insights", default=True, help="Add AI insights")
+@click.option("--update-content/--no-update-content", default=True, help="Update content with AI")
+def presentation_ai_enhance(presentation_file, add_insights, update_content):
+    """Enhance presentation with AI-generated content"""
+    try:
+        import sys
+        import os
+        # Add plugins directory to path (works from any directory)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        plugins_dir = os.path.join(os.path.dirname(script_dir), 'plugins')
+        if plugins_dir not in sys.path:
+            sys.path.insert(0, plugins_dir)
+        from ai.workflows.ai_enhanced_analysis import ai_enhanced_presentation
+        
+        console.print(f"🎨🤖 [bold blue]AI-Enhanced Presentation[/bold blue]")
+        console.print(f"📊 Input: {presentation_file}")
+        
+        # Load analysis results (would be more sophisticated in production)
+        analysis_results = {}
+        
+        # Run AI-enhanced presentation
+        results = ai_enhanced_presentation(presentation_file, analysis_results)
+        
+        console.print("✅ [bold green]AI-enhanced presentation complete![/bold green]")
+        console.print(f"📁 Output: {results}")
+        
+    except ImportError as e:
+        console.print(f"❌ [red]AI-enhanced presentation not available: {e}[/red]")
+        console.print("💡 Make sure AI plugins and presentation tools are installed")
+    except Exception as e:
+        console.print(f"❌ [red]AI-enhanced presentation failed: {e}[/red]")
 
 # Entry point for pip installation
 def main():
